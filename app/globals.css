@@ -14,6 +14,19 @@
   --font-mono: var(--font-geist-mono);
 }
 
+@theme {
+  --animate-scroll-cue: scroll-cue 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+
+  @keyframes scroll-cue {
+    0% {
+      transform: translateY(-100%);
+    }
+    100% {
+      transform: translateY(100%);
+    }
+  }
+}
+
 @utility font-headline-lg {
   font-family: var(--font-geist-sans);
   font-weight: 800;
@@ -64,4 +77,20 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Native cursor is replaced by CustomCursor on mouse devices */
+html.has-custom-cursor,
+html.has-custom-cursor * {
+  cursor: none !important;
+}
+
+::selection {
+  background: rgba(0, 212, 255, 0.3);
+  color: #ffffff;
+}
+
+:focus-visible {
+  outline: 1px solid #00d4ff;
+  outline-offset: 4px;
 }

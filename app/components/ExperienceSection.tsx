@@ -1,3 +1,8 @@
+import Magnetic from "./motion/Magnetic";
+import Reveal from "./motion/Reveal";
+import ScrambleText from "./motion/ScrambleText";
+import TimelineProgress from "./motion/TimelineProgress";
+
 type ExperienceEntry = {
   period: string;
   role: string;
@@ -42,35 +47,52 @@ export default function ExperienceSection() {
       id="logs"
       className="max-w-5xl mx-auto px-8 py-24 border-t border-white/5"
     >
-      <div className="flex items-center gap-4 mb-16">
+      <Reveal className="flex items-center gap-4 mb-16">
         <span className="font-label-mono text-[#00d4ff] text-lg uppercase">
-          &gt; SYS:LOGS
+          <ScrambleText text="> SYS:LOGS" hover={false} revealOnScroll />
         </span>
-        <div className="h-[1px] flex-grow bg-white/10"></div>
-        <a
-          href="/kimutai-april-cv.pdf"
-          download
-          className="group flex items-center gap-2 border border-[#00d4ff]/40 text-[#00d4ff] px-4 py-2 font-label-mono text-xs uppercase tracking-widest hover:bg-[#00d4ff]/10 hover:border-[#00d4ff] transition-colors whitespace-nowrap"
-        >
-          <span className="material-symbols-outlined text-sm">download</span>
-          DOWNLOAD_CV
-        </a>
-      </div>
+        <div data-reveal-line className="h-[1px] flex-grow bg-white/10"></div>
+        <Magnetic>
+          <a
+            href="/kimutai-april-cv.pdf"
+            download
+            className="group flex items-center gap-2 border border-[#00d4ff]/40 text-[#00d4ff] px-4 py-2 font-label-mono text-xs uppercase tracking-widest hover:bg-[#00d4ff]/10 hover:border-[#00d4ff] hover:shadow-[0_0_20px_rgba(0,212,255,0.3)] transition-[background-color,border-color,box-shadow,scale] active:scale-95 whitespace-nowrap"
+          >
+            <span className="material-symbols-outlined text-sm transition-transform duration-300 group-hover:translate-y-0.5">
+              download
+            </span>
+            <ScrambleText text="DOWNLOAD_CV" />
+          </a>
+        </Magnetic>
+      </Reveal>
 
-      <div className="relative pl-12 border-l border-[#00d4ff]/20 space-y-16">
+      <Reveal
+        className="relative pl-12 border-l border-[#00d4ff]/20 space-y-16"
+        stagger={0.18}
+        y={0}
+        x={-24}
+      >
+        <TimelineProgress />
         {entries.map((entry) => (
           <div
+            data-reveal
             key={entry.role}
-            className={`relative ${!entry.active ? "opacity-60" : ""}`}
+            className={`group relative transition-opacity duration-500 ${
+              !entry.active ? "opacity-60 hover:opacity-100" : ""
+            }`}
           >
             <div
-              className={`absolute -left-[54px] top-0 w-3 h-3 ${
+              className={`absolute -left-[54px] top-0 w-3 h-3 transition-[scale,box-shadow] duration-300 group-hover:scale-150 group-hover:shadow-[0_0_14px_#00d4ff] ${
                 entry.active
                   ? "bg-[#00d4ff] shadow-[0_0_10px_#00d4ff]"
                   : "border border-[#00d4ff] bg-[#0a0a0f]"
               }`}
-            ></div>
-            <div className="space-y-2">
+            >
+              {entry.active && (
+                <span className="absolute inset-0 bg-[#00d4ff] motion-safe:animate-ping" />
+              )}
+            </div>
+            <div className="space-y-2 transition-transform duration-500 group-hover:translate-x-1">
               <span className="font-label-mono text-slate-500 text-xs uppercase tracking-widest">
                 {entry.period}
               </span>
@@ -81,7 +103,7 @@ export default function ExperienceSection() {
             </div>
           </div>
         ))}
-      </div>
+      </Reveal>
     </section>
   );
 }

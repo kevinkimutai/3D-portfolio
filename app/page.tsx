@@ -6,6 +6,7 @@ import BeeSection from "./components/BeeSection";
 import ExperienceSection from "./components/ExperienceSection";
 import ContactSection from "./components/ContactSection";
 import Footer from "./components/Footer";
+import CustomCursor from "./components/motion/CustomCursor";
 
 export default function Home() {
   return (
@@ -20,6 +21,7 @@ export default function Home() {
         <ContactSection />
       </main>
       <Footer />
+      <CustomCursor />
     </div>
   );
 }

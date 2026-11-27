@@ -37,16 +37,9 @@ function DanceModel() {
     meshRef.current.scale.set(1, 1, 1);
     meshRef.current.rotation.set(0, 0, 0);
 
-    scene.traverse((child) => {
-      if ((child as THREE.Mesh).isMesh) {
-        (child as THREE.Mesh).material = new THREE.MeshBasicMaterial({
-          color: "#00d4ff",
-          wireframe: true,
-          transparent: true,
-          opacity: 0.65,
-        });
-      }
-    });
+    // The GLB already carries a standard metallic-roughness material with its
+    // base-color texture, so leave the materials as loaded (no wireframe
+    // override) — they render textured, provided the scene has lighting.
 
     meshRef.current.updateMatrixWorld(true);
 
@@ -83,6 +76,12 @@ export default function DanceScene() {
       dpr={[1, 2]}
       style={{ width: "100%", height: "100%" }}
     >
+      <ambientLight intensity={1.8} />
+      <directionalLight position={[3, 5, 4]} intensity={3.5} />
+      <directionalLight position={[-4, 2, -3]} intensity={1.5} />
+      {/* Front fill aimed from the camera so the dark textures read against
+          the dark background. */}
+      <directionalLight position={[0, 1, 6]} intensity={1.5} />
       <DanceModel />
     </Canvas>
   );
