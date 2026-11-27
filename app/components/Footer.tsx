@@ -28,7 +28,7 @@ export default function Footer() {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-primary-container rounded-none shadow-[0_0_8px_#00d4ff]"></div>
+          <div className="w-2 h-2 bg-primary-container rounded-none shadow-[0_0_8px_#00d4ff] motion-safe:animate-pulse"></div>
           <span className="font-mono text-[10px] text-primary-container tracking-widest uppercase">
             SYSTEM_ONLINE
           </span>

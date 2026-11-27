@@ -5,6 +5,9 @@ import gsap from "gsap";
 import * as THREE from "three";
 import HeroScene from "./HeroScene";
 import { scrollToSection } from "../lib/smoothScroll";
+import { hasFinePointer, prefersReducedMotion } from "../lib/motion";
+import Magnetic from "./motion/Magnetic";
+import ScrambleText from "./motion/ScrambleText";
 
 const NAME = "KEVIN KIMUTAI";
 const TITLE = "SYSTEM'S ENGINEER";
@@ -15,6 +18,13 @@ export default function HeroSection() {
   const subtitleRef = useRef<HTMLParagraphElement>(null);
   const buttonsRef = useRef<HTMLDivElement>(null);
   const decorRef = useRef<HTMLDivElement>(null);
+  const cueRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const meshBgRef = useRef<HTMLDivElement>(null);
+  // Letter hover only kicks in once the intro stagger has finished
+  const introDoneRef = useRef(false);
 
   // Flipped to true by TorusKnotMesh's useEffect — guarantees meshRef.current is set
   const [sceneReady, setSceneReady] = useState(false);
@@ -56,26 +66,101 @@ export default function HeroSection() {
       1.4
     );
 
-    // Act 5 — bottom-left decoration
+    // Act 5 — bottom-left decoration + scroll cue
     tl.fromTo(
-      decorRef.current,
+      [decorRef.current, cueRef.current],
       { opacity: 0 },
       { opacity: 1, duration: 0.6 },
       1.6
     );
 
+    tl.eventCallback("onComplete", () => {
+      introDoneRef.current = true;
+    });
+
     return () => { tl.kill(); };
   }, [sceneReady]);
 
+  // Hero content drifts up and fades as you scroll past it
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+    const tween = gsap.to(contentRef.current, {
+      y: -120,
+      opacity: 0,
+      ease: "none",
+      scrollTrigger: {
+        trigger: sectionRef.current,
+        start: "top top",
+        end: "bottom top",
+        scrub: true,
+      },
+    });
+    return () => {
+      tween.scrollTrigger?.kill();
+      tween.kill();
+    };
+  }, []);
+
+  // Heading and background glow shift with the pointer for a sense of depth
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section || prefersReducedMotion() || !hasFinePointer()) return;
+
+    const headX = gsap.quickTo(headingRef.current, "x", { duration: 1, ease: "power3.out" });
+    const headY = gsap.quickTo(headingRef.current, "y", { duration: 1, ease: "power3.out" });
+    const bgX = gsap.quickTo(meshBgRef.current, "x", { duration: 1.4, ease: "power3.out" });
+    const bgY = gsap.quickTo(meshBgRef.current, "y", { duration: 1.4, ease: "power3.out" });
+
+    const move = (e: PointerEvent) => {
+      const rect = section.getBoundingClientRect();
+      const nx = (e.clientX - rect.left) / rect.width - 0.5;
+      const ny = (e.clientY - rect.top) / rect.height - 0.5;
+      headX(nx * 24);
+      headY(ny * 14);
+      bgX(nx * -60);
+      bgY(ny * -40);
+    };
+    const leave = () => {
+      headX(0);
+      headY(0);
+      bgX(0);
+      bgY(0);
+    };
+
+    section.addEventListener("pointermove", move);
+    section.addEventListener("pointerleave", leave);
+    return () => {
+      section.removeEventListener("pointermove", move);
+      section.removeEventListener("pointerleave", leave);
+    };
+  }, []);
+
+  const bounceLetter = (el: HTMLSpanElement | null) => {
+    if (!el || !introDoneRef.current || prefersReducedMotion()) return;
+    gsap
+      .timeline()
+      .to(el, { y: -8, color: "#00d4ff", duration: 0.15, ease: "power2.out", overwrite: "auto" })
+      .to(el, { y: 0, duration: 0.7, ease: "elastic.out(1, 0.35)" })
+      .to(el, { color: "#ffffff", duration: 0.8, clearProps: "color" }, "<");
+  };
+
   return (
-    <section className="relative min-h-[707px] flex flex-col items-center justify-center px-6 overflow-hidden">
+    <section
+      ref={sectionRef}
+      className="relative min-h-[707px] flex flex-col items-center justify-center px-6 overflow-hidden"
+    >
       <HeroScene meshRef={meshRef} onReady={handleSceneReady} />
 
-      <div className="absolute inset-0 bg-mesh opacity-40 z-0 pointer-events-none" />
+      <div
+        ref={meshBgRef}
+        className="absolute -inset-16 bg-mesh opacity-40 z-0 pointer-events-none"
+      />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0a0f]/50 to-[#0a0a0f] z-[1] pointer-events-none" />
 
-      <div className="relative z-10 text-center space-y-6">
-        <h1 className="font-headline-lg text-6xl md:text-8xl tracking-tighter text-white font-extrabold uppercase overflow-hidden">
+      <div ref={contentRef} className="relative z-10 text-center space-y-6">
+        <h1
+          ref={headingRef}
+          className="font-headline-lg text-6xl md:text-8xl tracking-tighter text-white font-extrabold uppercase overflow-hidden">
           {NAME.split(" ").map((word, wordIndex, words) => {
             const offset = words
               .slice(0, wordIndex)
@@ -93,6 +178,7 @@ export default function HeroSection() {
                     <span
                       key={i}
                       ref={(el) => { lettersRef.current[i] = el; }}
+                      onMouseEnter={(e) => bounceLetter(e.currentTarget)}
                       className="inline-block"
                       style={{ opacity: 0 }}
                     >
@@ -118,18 +204,22 @@ export default function HeroSection() {
           className="flex flex-col md:flex-row gap-4 pt-8 justify-center"
           style={{ opacity: 0 }}
         >
-          <button
-            onClick={() => scrollToSection("work")}
-            className="border border-[#00d4ff] text-[#00d4ff] px-8 py-3 font-label-mono tracking-widest hover:bg-[#00d4ff]/10 transition-colors uppercase"
-          >
-            [VIEW_WORK]
-          </button>
-          <button
-            onClick={() => scrollToSection("contact")}
-            className="border border-white/10 text-white px-8 py-3 font-label-mono tracking-widest hover:bg-white/5 transition-colors uppercase"
-          >
-            [GET_IN_TOUCH]
-          </button>
+          <Magnetic className="block">
+            <button
+              onClick={() => scrollToSection("work")}
+              className="w-full md:w-auto border border-[#00d4ff] text-[#00d4ff] px-8 py-3 font-label-mono tracking-widest hover:bg-[#00d4ff]/10 hover:shadow-[0_0_24px_rgba(0,212,255,0.35)] transition-[background-color,box-shadow,scale] duration-300 active:scale-95 uppercase"
+            >
+              <ScrambleText text="[VIEW_WORK]" />
+            </button>
+          </Magnetic>
+          <Magnetic className="block">
+            <button
+              onClick={() => scrollToSection("contact")}
+              className="w-full md:w-auto border border-white/10 text-white px-8 py-3 font-label-mono tracking-widest hover:bg-white/5 hover:border-white/40 transition-[background-color,border-color,scale] duration-300 active:scale-95 uppercase"
+            >
+              <ScrambleText text="[GET_IN_TOUCH]" />
+            </button>
+          </Magnetic>
         </div>
       </div>
 
@@ -142,6 +232,19 @@ export default function HeroSection() {
           <p>LATENCY_TARGET: &lt; 20MS</p>
           <p>UPTIME_SLA: 99.99%</p>
           <p>REGION: US-EAST-1</p>
+        </div>
+      </div>
+
+      <div
+        ref={cueRef}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-3"
+        style={{ opacity: 0 }}
+      >
+        <span className="font-code-sm text-[10px] text-slate-500 tracking-[0.4em] uppercase">
+          Scroll
+        </span>
+        <div className="relative h-10 w-px overflow-hidden bg-white/10">
+          <div className="absolute inset-0 bg-[#00d4ff] motion-safe:animate-scroll-cue" />
         </div>
       </div>
     </section>
